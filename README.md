@@ -1,2 +1,3 @@
-# reranker
-rerank for hybrid retrieval
+# ReRanker
+
+ReRanker for hybrid retrieval.
