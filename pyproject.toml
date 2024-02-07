@@ -28,6 +28,9 @@ dev = [
 requires = ["setuptools", "setuptools_scm>=7.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+packages = ["reranker"]
+
 [tool.setuptools_scm]
 fallback_version = "0.0.0"
 
