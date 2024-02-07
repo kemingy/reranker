@@ -10,6 +10,10 @@ classifiers = [
     "Intended Audience :: Developers",
 ]
 dependencies = [
+    "msgspec",
+    "httpx",
+    "cohere",
+    "numpy",
 ]
 [project.optional-dependencies]
 dev = [

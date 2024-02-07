@@ -1,4 +1,4 @@
-PY_SOURCE=reranker
+PY_SOURCE=reranker serving
 
 dev:
 	@pip install -e .[dev]

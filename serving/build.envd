@@ -1,0 +1,14 @@
+# syntax=v1
+
+
+def build():
+    install.conda()
+    install.python()
+
+
+def serving():
+    base(dev=False, image="11.6.1-cudnn8-runtime-ubuntu20.04")
+    install.python()
+    install.python_packages(requirements="requirements.txt")
+    io.copy("main.py", "/root/main.py")
+    config.entrypoint(["python", "/root/main.py"])
