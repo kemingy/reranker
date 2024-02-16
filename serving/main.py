@@ -1,7 +1,7 @@
 from os import environ
 
 from mosec import Server, Worker
-from sentence_transfomers import CrossEncoder
+from sentence_transformers import CrossEncoder
 
 DEFAULT_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 WORKER_NUM = environ.get("WORKER_NUM", 1)
