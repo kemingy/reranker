@@ -23,8 +23,7 @@ class CrossEncoderClient(Ranker):
         self.client = httpx.Client(base_url=addr)
         self.top_k = top_k
 
-    def rank(self, query: Record, docs: list[Record]) -> list[Record]:
-        top_k = len(docs) if self.top_k == 0 else self.top_k
+    def score(self, query: Record, docs: list[Record], top_k: int) -> list[float]:
         resp = self.client.post(
             "/inference",
             json={
@@ -33,7 +32,12 @@ class CrossEncoderClient(Ranker):
                 "top_k": top_k,
             },
         )
-        scores = resp.json()
+        resp.raise_for_status()
+        return resp.json()
+
+    def rank(self, query: Record, docs: list[Record]) -> list[Record]:
+        top_k = len(docs) if self.top_k == 0 else self.top_k
+        scores = self.score(query, docs, top_k)
         return docs.sort(key=scores.__getitem__, reverse=True)[:top_k]
 
 
@@ -43,8 +47,7 @@ class CohereClient(Ranker):
         self.client = cohere.Client(api_key=key)
         self.top_k = top_k
 
-    def rank(self, query: Record, docs: list[Record]) -> list[Record]:
-        top_k = len(docs) if self.top_k == 0 else self.top_k
+    def score(self, query: Record, docs: list[Record], top_k: int) -> list[float]:
         ranks = self.client.rerank(
             query=query.text,
             documents=[doc.text for doc in docs],
@@ -52,6 +55,11 @@ class CohereClient(Ranker):
             model=self.model_name,
         )
         scores = [rank.relevance_score for rank in ranks.results]
+        return scores
+
+    def rank(self, query: Record, docs: list[Record]) -> list[Record]:
+        top_k = len(docs) if self.top_k == 0 else self.top_k
+        scores = self.score(query, docs, top_k)
         return docs.sort(key=scores.__getitem__, reverse=True)[:top_k]
 
 
@@ -64,6 +72,8 @@ class DiverseRanker(Ranker):
     ):
         """
         Rank documents by diversity computed by maximal marginal relevance (MMR).
+
+        Link: https://www.cs.bilkent.edu.tr/~canf/CS533/hwSpring14/eightMinPresentations/handoutMMR.pdf
 
         Args:
             lambda_const: The parameter $\lambda$ in MMR. The value should be
@@ -117,7 +127,7 @@ class TimeDecayRanker(Ranker):
         """
         self.decay_rate = decay_rate
 
-    def rank(self, query: Record, docs: list[Record]) -> list[Record]:
+    def score(self, query: Record, docs: list[Record]) -> list[float]:
         if not docs or docs[0].updated_at is None:
             raise ValueError("doc `created_at` is required for time decay ranking")
         scores = [
@@ -128,11 +138,78 @@ class TimeDecayRanker(Ranker):
             )
             for record in docs
         ]
+        return scores
+
+    def rank(self, query: Record, docs: list[Record]) -> list[Record]:
+        scores = self.score(query, docs)
+        return docs.sort(key=scores.__getitem__, reverse=True)
+
+
+class KeywordBoost(Ranker):
+    def __init__(self, title_content_ratio: float = 0.7) -> None:
+        self.title_content_ratio = title_content_ratio
+
+    def score(self, query: Record, docs: list[Record]) -> list[float]:
+        if docs and docs[0].title_bm25:
+            scores = [
+                (
+                    doc.title_bm25 * self.title_content_ratio
+                    + doc.content_bm25 * (1 - self.title_content_ratio)
+                )
+                * doc.boost
+                for doc in docs
+            ]
+        else:
+            scores = [doc.content_bm25 * doc.boost for doc in docs]
+        return scores
+
+    def rank(self, query: Record, docs: list[Record]) -> list[Record]:
+        scores = self.score(query, docs)
+        return docs.sort(key=scores.__getitem__, reverse=True)
+
+
+class VectorBoost(Ranker):
+    def __init__(self, title_content_ratio: float = 0.7) -> None:
+        self.title_content_ratio = title_content_ratio
+
+    def score(self, query: Record, docs: list[Record]) -> list[float]:
+        if docs and docs[0].title_sim:
+            scores = [
+                (
+                    doc.title_sim * self.title_content_ratio
+                    + doc.vector_sim * (1 - self.title_content_ratio)
+                )
+                * doc.boost
+                for doc in docs
+            ]
+        else:
+            scores = [doc.vector_sim * doc.boost for doc in docs]
+        return scores
+
+    def rank(self, query: Record, docs: list[Record]) -> list[Record]:
+        scores = self.score(query, docs)
+        return docs.sort(key=scores.__getitem__, reverse=True)
+
+
+class HybridRanker(Ranker):
+    def __init__(self, decay_rate: float = 1.8, title_content_ratio: float = 0.7):
+        self.decay_ranker = TimeDecayRanker(decay_rate)
+        self.vector_ranker = VectorBoost(title_content_ratio)
+
+    def score(self, query: Record, docs: list[Record]) -> list[float]:
+        decay_score = self.decay_ranker.score(query, docs)
+        vector_score = self.vector_ranker.score(query, docs)
+        return [decay * vector for decay, vector in zip(decay_score, vector_score)]
+
+    def rank(self, query: Record, docs: list[Record]) -> list[Record]:
+        scores = self.score(query, docs)
         return docs.sort(key=scores.__getitem__, reverse=True)
 
 
 class ReRanker:
     def __init__(self, steps: list[Ranker]) -> None:
+        if not steps:
+            raise ValueError("At least one ranker is required")
         self.steps = steps
 
     def rank_records(self, query: Record, docs: list[Record]) -> list[Record]:

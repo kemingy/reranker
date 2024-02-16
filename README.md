@@ -58,11 +58,11 @@ reranker.rank(
 
 ## Ranking
 
-- rank(query: str, docs: list[str])
+- `rank(query: str, docs: list[str])`
   - cross-encoder model
   - cohere model
   - diversity
-- rank(docs: list[Record])
+- `rank(docs: list[Record])`
   - time decay with expressions
   - title n-gram with bm25
   - content n-gram with bm25
