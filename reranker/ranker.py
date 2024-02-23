@@ -6,6 +6,7 @@ from typing import overload
 
 import cohere
 import httpx
+import msgspec
 
 from reranker.distance import Distance
 from reranker.spec import Record
@@ -23,22 +24,26 @@ class CrossEncoderClient(Ranker):
         self.client = httpx.Client(base_url=addr)
         self.top_k = top_k
 
-    def score(self, query: Record, docs: list[Record], top_k: int) -> list[float]:
+    def score(self, query: Record, docs: list[Record]) -> list[float]:
         resp = self.client.post(
             "/inference",
-            json={
-                "query": query.text,
-                "docs": [doc.text for doc in docs],
-                "top_k": top_k,
-            },
+            content=msgspec.msgpack.encode(
+                {
+                    "query": query.text,
+                    "docs": [doc.text for doc in docs],
+                }
+            ),
         )
         resp.raise_for_status()
-        return resp.json()
+        return msgspec.msgpack.decode(resp.content)["scores"]
 
     def rank(self, query: Record, docs: list[Record]) -> list[Record]:
         top_k = len(docs) if self.top_k == 0 else self.top_k
         scores = self.score(query, docs, top_k)
-        return docs.sort(key=scores.__getitem__, reverse=True)[:top_k]
+        return [
+            doc
+            for (_, doc) in sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
+        ][:top_k]
 
 
 class CohereClient(Ranker):
@@ -47,11 +52,10 @@ class CohereClient(Ranker):
         self.client = cohere.Client(api_key=key)
         self.top_k = top_k
 
-    def score(self, query: Record, docs: list[Record], top_k: int) -> list[float]:
+    def score(self, query: Record, docs: list[Record]) -> list[float]:
         ranks = self.client.rerank(
             query=query.text,
             documents=[doc.text for doc in docs],
-            top_k=top_k,
             model=self.model_name,
         )
         scores = [rank.relevance_score for rank in ranks.results]
@@ -60,7 +64,10 @@ class CohereClient(Ranker):
     def rank(self, query: Record, docs: list[Record]) -> list[Record]:
         top_k = len(docs) if self.top_k == 0 else self.top_k
         scores = self.score(query, docs, top_k)
-        return docs.sort(key=scores.__getitem__, reverse=True)[:top_k]
+        return [
+            doc
+            for (_, doc) in sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
+        ][:top_k]
 
 
 class DiverseRanker(Ranker):
@@ -76,7 +83,7 @@ class DiverseRanker(Ranker):
         Link: https://www.cs.bilkent.edu.tr/~canf/CS533/hwSpring14/eightMinPresentations/handoutMMR.pdf
 
         Args:
-            lambda_const: The parameter $\lambda$ in MMR. The value should be
+            lambda_const: The parameter lambda in MMR. The value should be
                 between 0 and 1. A lower value will result in more diverse ranking.
             threshold: The threshold to filter out similar documents.
             distance: The distance metric used to compute the similarity score.
