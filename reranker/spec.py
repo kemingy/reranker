@@ -30,6 +30,13 @@ class Record(msgspec.Struct, kw_only=True):
     hidden: bool = False
     boost: float = 1.0
 
+    def use_np(self) -> Self:
+        if isinstance(self.vector, list):
+            self.vector = np.array(self.vector)
+        if isinstance(self.title_vector, list):
+            self.title_vector = np.array(self.title_vector)
+        return self
+
     def to_json(self) -> bytes:
         return msgspec.json.encode(self)
 
