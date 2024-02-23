@@ -49,7 +49,7 @@ def test_diversity_ranker(records):
     assert ranked
 
     # disable threshold
-    ranker.threshold = -float('inf')
+    ranker.threshold = -float("inf")
     ranked = ranker.rank(query, records)
     assert len(ranked) == len(records)
 
