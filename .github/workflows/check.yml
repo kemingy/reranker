@@ -21,8 +21,8 @@ jobs:
       with:
         python-version: "3.11"
     - name: Install dependencies
-      run: |
-        make dev
+      run: make dev
     - name: Lint
-      run: |
-        make lint
+      run: make lint
+    - name: Test
+      run: make test

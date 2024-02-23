@@ -89,6 +89,10 @@ class DiverseRanker(Ranker):
         if not docs or docs[0].vector is None:
             raise ValueError("`vector` is required for diverse ranking")
 
+        # convert to np array for distance computation
+        query.use_np()
+        for doc in docs:
+            doc.use_np()
         # pre-compute similarity scores
         similarity: dict[str, float] = {}
         length = len(docs)
@@ -130,10 +134,11 @@ class TimeDecayRanker(Ranker):
     def score(self, query: Record, docs: list[Record]) -> list[float]:
         if not docs or docs[0].updated_at is None:
             raise ValueError("doc `created_at` is required for time decay ranking")
+        current = datetime.now()
         scores = [
             record.score
             / (
-                (2 + ((datetime.now() - record.updated_at).seconds / 3600.0))
+                (2 + ((current - record.updated_at).total_seconds() / 3600.0))
                 ** self.decay_rate
             )
             for record in docs
@@ -142,7 +147,10 @@ class TimeDecayRanker(Ranker):
 
     def rank(self, query: Record, docs: list[Record]) -> list[Record]:
         scores = self.score(query, docs)
-        return docs.sort(key=scores.__getitem__, reverse=True)
+        return [
+            doc
+            for (_, doc) in sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
+        ]
 
 
 class KeywordBoost(Ranker):
@@ -165,7 +173,10 @@ class KeywordBoost(Ranker):
 
     def rank(self, query: Record, docs: list[Record]) -> list[Record]:
         scores = self.score(query, docs)
-        return docs.sort(key=scores.__getitem__, reverse=True)
+        return [
+            doc
+            for (_, doc) in sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
+        ]
 
 
 class VectorBoost(Ranker):
@@ -188,7 +199,10 @@ class VectorBoost(Ranker):
 
     def rank(self, query: Record, docs: list[Record]) -> list[Record]:
         scores = self.score(query, docs)
-        return docs.sort(key=scores.__getitem__, reverse=True)
+        return [
+            doc
+            for (_, doc) in sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
+        ]
 
 
 class HybridRanker(Ranker):
@@ -203,7 +217,10 @@ class HybridRanker(Ranker):
 
     def rank(self, query: Record, docs: list[Record]) -> list[Record]:
         scores = self.score(query, docs)
-        return docs.sort(key=scores.__getitem__, reverse=True)
+        return [
+            doc
+            for (_, doc) in sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
+        ]
 
 
 class ReRanker:
