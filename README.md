@@ -2,6 +2,21 @@
 
 ReRanker for hybrid retrieval.
 
+## Ranking
+
+- `rank(query: str, docs: list[str])`
+  - cross-encoder model
+  - cohere model
+  - diversity
+- `rank(docs: list[Record])`
+  - time decay with expressions
+  - title n-gram with bm25
+  - content n-gram with bm25
+  - document boost with expressions
+  - title embedding with content embedding
+  - title keywords with content keywords
+  - combination of the above features
+
 ## Installation
 
 ```bash
@@ -9,6 +24,12 @@ pip install reranker
 ```
 
 ## Usage
+
+If you need the cross-encoder model service, you can start the server with the following command:
+
+```bash
+docker compose -f serving/compose.yaml up -d
+```
 
 ```python
 from datetime import datetime, timedelta
@@ -54,19 +75,3 @@ reranker.rank(
     ]
 )
 ```
-
-
-## Ranking
-
-- `rank(query: str, docs: list[str])`
-  - cross-encoder model
-  - cohere model
-  - diversity
-- `rank(docs: list[Record])`
-  - time decay with expressions
-  - title n-gram with bm25
-  - content n-gram with bm25
-  - document boost with expressions
-  - title embedding with content embedding
-  - title keywords with content keywords
-  - combination of the above features
