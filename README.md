@@ -28,7 +28,7 @@ pip install reranker
 If you need the cross-encoder model service, you can start the server with the following command:
 
 ```bash
-docker compose -f serving/compose.yaml up -d
+docker compose -f serving/compose.yaml up -d encoder
 ```
 
 ```python

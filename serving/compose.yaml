@@ -1,7 +1,14 @@
 services:
   encoder:
     build: 
-      context: .
+      context: ./encoder
       dockerfile: Dockerfile
     ports:
       - "8080:8000"
+
+  colbert:
+    build: 
+      context: ./colbert
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8000"
