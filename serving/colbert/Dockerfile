@@ -49,6 +49,7 @@ RUN mkdir -p /workspace
 WORKDIR /workspace
 COPY requirements.txt /workspace/requirements.txt
 RUN pip install -r requirements.txt
+RUN wget https://huggingface.co/vespa-engine/col-minilm/resolve/main/onnx/model_quantized.onnx
 COPY main.py /workspace/main.py
 
 ENTRYPOINT [ "python", "main.py" ]
