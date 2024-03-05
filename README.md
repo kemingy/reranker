@@ -9,7 +9,7 @@ For end-to-end text query service, check [qtext](https://github.com/kemingy/qtex
 - `rank(query: str, docs: list[str])`
   - cross-encoder model
   - cohere model
-  - diversity
+  - diversity ([Max Marginal Relevance](https://www.cs.bilkent.edu.tr/~canf/CS533/hwSpring14/eightMinPresentations/handoutMMR.pdf))
 - `rank(docs: list[Record])`
   - time decay with expressions
   - title n-gram with bm25
@@ -31,6 +31,12 @@ If you need the cross-encoder model service, you can start the server with the f
 
 ```bash
 docker compose -f serving/compose.yaml up -d encoder
+```
+
+If you need the semantic highlight service, you can start the server with the following command:
+
+```bash
+docker compose -f serving/compose.yaml up -d colbert
 ```
 
 ```python
