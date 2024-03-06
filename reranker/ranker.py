@@ -165,6 +165,7 @@ class KeywordBoost(Ranker):
         self.title_content_ratio = title_content_ratio
 
     def score(self, query: Record, docs: list[Record]) -> list[float]:
+        """Higher score is better."""
         if docs and docs[0].title_bm25:
             scores = [
                 (
@@ -191,17 +192,18 @@ class VectorBoost(Ranker):
         self.title_content_ratio = title_content_ratio
 
     def score(self, query: Record, docs: list[Record]) -> list[float]:
+        """Higher score is better."""
         if docs and docs[0].title_sim:
             scores = [
-                (
+                doc.boost
+                / (
                     doc.title_sim * self.title_content_ratio
                     + doc.vector_sim * (1 - self.title_content_ratio)
                 )
-                * doc.boost
                 for doc in docs
             ]
         else:
-            scores = [doc.vector_sim * doc.boost for doc in docs]
+            scores = [doc.boost / doc.vector_sim for doc in docs]
         return scores
 
     def rank(self, query: Record, docs: list[Record]) -> list[Record]:
@@ -216,11 +218,16 @@ class HybridRanker(Ranker):
     def __init__(self, decay_rate: float = 1.8, title_content_ratio: float = 0.7):
         self.decay_ranker = TimeDecayRanker(decay_rate)
         self.vector_ranker = VectorBoost(title_content_ratio)
+        self.kw_ranker = KeywordBoost(title_content_ratio)
 
     def score(self, query: Record, docs: list[Record]) -> list[float]:
         decay_score = self.decay_ranker.score(query, docs)
         vector_score = self.vector_ranker.score(query, docs)
-        return [decay * vector for decay, vector in zip(decay_score, vector_score)]
+        kw_score = self.kw_ranker.score(query, docs)
+        return [
+            decay * vector * kw
+            for decay, vector, kw in zip(decay_score, vector_score, kw_score)
+        ]
 
     def rank(self, query: Record, docs: list[Record]) -> list[Record]:
         scores = self.score(query, docs)
