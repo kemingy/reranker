@@ -49,6 +49,6 @@ RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
 RUN pip install mosec sentence_transformers msgspec
 RUN mkdir -p /workspace
 WORKDIR /workspace
-COPY encoder.py /workspace/encoder.py
+COPY main.py /workspace/main.py
 
-ENTRYPOINT [ "python", "encoder.py" ]
+ENTRYPOINT [ "python", "main.py" ]
