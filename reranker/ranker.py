@@ -39,7 +39,7 @@ class CrossEncoderClient(Ranker):
 
     def rank(self, query: Record, docs: list[Record]) -> list[Record]:
         top_k = len(docs) if self.top_k == 0 else self.top_k
-        scores = self.score(query, docs, top_k)
+        scores = self.score(query, docs)
         return [
             doc
             for (_, doc) in sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
@@ -63,7 +63,7 @@ class CohereClient(Ranker):
 
     def rank(self, query: Record, docs: list[Record]) -> list[Record]:
         top_k = len(docs) if self.top_k == 0 else self.top_k
-        scores = self.score(query, docs, top_k)
+        scores = self.score(query, docs)
         return [
             doc
             for (_, doc) in sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
