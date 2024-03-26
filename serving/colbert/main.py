@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import msgspec
 import numpy as np
 import onnxruntime as ort
@@ -18,12 +20,6 @@ class HighlightToken(msgspec.Struct, kw_only=True):
     score: float
 
 
-class Tokenizer(Worker):
-    def forward(self, query: str):
-        tokens = self.tokenizer(query)
-        return (tokens["input_ids"], tokens["attention_mask"])
-
-
 class Highlight(Worker):
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
@@ -36,14 +32,12 @@ class Highlight(Worker):
         Returns:
             the max similarity for each token in the documents
         """
-        tokens = self.tokenizer(queries, padding=True)
-        input_ids = np.array(tokens["input_ids"])
-        attention_mask = np.array(tokens["attention_mask"])
+        tokens = self.tokenizer(queries, padding=True, return_tensors="np")
         outputs = self.session.run(
             ["contextual"],
             {
-                "input_ids": input_ids,
-                "attention_mask": attention_mask,
+                "input_ids": tokens["input_ids"],
+                "attention_mask": tokens["attention_mask"],
             },
         )[0]
         token_vectors = []
