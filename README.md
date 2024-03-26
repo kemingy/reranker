@@ -19,6 +19,18 @@ For end-to-end text query service, check [qtext](https://github.com/kemingy/qtex
   - title keywords with content keywords
   - combination of the above features
 
+## Services
+
+- [cross-encoder model service](./serving/encoder/)
+- [semantic highlight service](./serving/colbert/)
+- [sparse embedding service](./serving/splade/)
+
+You can start all the service with the following command:
+
+```bash
+docker compose -f serving/compose.yaml up -d
+```
+
 ## Installation
 
 ```bash
