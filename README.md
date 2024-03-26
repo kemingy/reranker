@@ -2,7 +2,7 @@
 
 ReRanker for hybrid retrieval.
 
-For end-to-end text query service, check [qtext](https://github.com/kemingy/qtext).
+For end-to-end text query service, check [qtext](https://github.com/tensorchord/qtext).
 
 ## Ranking
 

@@ -10,7 +10,7 @@ MODEL_NAME = "prithivida/Splade_PP_en_v1"
 
 
 class SparseEmbedding(msgspec.Struct, kw_only=True, frozen=True):
-    indices: list[float]
+    indices: list[int]
     values: list[float]
 
 
