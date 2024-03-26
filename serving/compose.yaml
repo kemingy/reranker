@@ -1,14 +1,21 @@
 services:
-  encoder:
+  rerank:
     build: 
       context: ./encoder
       dockerfile: Dockerfile
     ports:
       - "8080:8000"
 
-  colbert:
+  highlight:
     build: 
       context: ./colbert
       dockerfile: Dockerfile
     ports:
       - "8081:8000"
+
+  sparse:
+    build:
+      context: ./sparse
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8000"
